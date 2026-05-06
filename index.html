@@ -10,24 +10,27 @@
         .container { width: 100%; max-width: 500px; box-sizing: border-box; }
         .card { background: white; border-radius: 16px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         
-        /* 标题行布局，方便放折叠按钮 */
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         h3 { margin: 0; font-size: 17px; border-left: 4px solid var(--primary); padding-left: 10px; }
         .toggle-btn { font-size: 13px; color: var(--primary); cursor: pointer; padding: 5px; }
 
         .month-selector { display: flex; align-items: center; justify-content: space-between; background: white; padding: 10px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .month-btn { background: none; border: none; font-size: 18px; color: var(--primary); padding: 5px 15px; }
         
-        .input-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px; }
+        .input-group { display: flex; flex-direction: column; gap: 10px; }
+        .amount-row { display: flex; gap: 8px; align-items: center; }
         select, .main-input { width: 100%; padding: 12px; border: 1px solid #d2d2d7; border-radius: 10px; font-size: 16px; outline: none; background: white; box-sizing: border-box; }
         
+        /* 备注图标按钮 */
+        .note-toggle { width: 44px; height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border: 1px solid #d2d2d7; border-radius: 10px; font-size: 18px; color: var(--gray); cursor: pointer; }
+        .note-toggle.active { border-color: var(--primary); color: var(--primary); background: #f0f7ff; }
+
         .budget-set-row { display: flex; gap: 8px; align-items: center; }
         .budget-set-row select { flex: 1; }
         .btn-update { padding: 12px 15px; border-radius: 10px; background: var(--primary); color: white; border: none; font-size: 14px; white-space: nowrap; }
-        .btn-main { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; font-size: 16px; margin-top: 5px; }
+        .btn-main { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; font-size: 16px; margin-top: 12px; }
 
-        .budget-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 15px; }
-        /* 折叠状态样式 */
+        .budget-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 12px; }
         .hidden { display: none !important; }
 
         .budget-card { background: #fbfbfd; border: 1px solid #e5e5ea; padding: 12px; border-radius: 12px; }
@@ -62,35 +65,40 @@
                 <option value="医疗">医疗</option><option value="娱乐">娱乐</option>
                 <option value="其他">其他</option>
             </select>
-            <input type="number" id="recordAmount" class="main-input" placeholder="输入金额">
-            <input type="text" id="recordNote" class="main-input" placeholder="备注（可选）">
+            <div class="amount-row">
+                <input type="number" id="recordAmount" class="main-input" placeholder="输入金额">
+                <!-- 备注图标 -->
+                <div id="noteIcon" class="note-toggle" onclick="toggleNote()">✎</div>
+            </div>
+            <!-- 默认隐藏的备注框 -->
+            <input type="text" id="recordNote" class="main-input hidden" placeholder="写点备注...">
         </div>
         <button class="btn-main" onclick="addRecord()">保存记录</button>
     </div>
 
     <div class="card">
         <div class="card-header">
-            <h3>➁ 预算设置</h3>
-            <!-- 关键点：折叠切换按钮 -->
-            <div class="toggle-btn" id="toggleBudgetBtn" onclick="toggleBudget()">[ 收起 ]</div>
+            <h3>➁ 预算进度</h3>
+            <!-- 修改：仅折叠设置区域 -->
+            <div class="toggle-btn" id="toggleSettingBtn" onclick="toggleBudgetSetting()">[ 调整额度 ]</div>
         </div>
-        <div id="budgetContent">
-            <div class="input-group">
-                <div class="budget-set-row">
-                    <select id="setCat">
-                        <option value="total">总预算</option>
-                        <option value="三餐">三餐</option><option value="住房">住房</option>
-                        <option value="交通">交通</option><option value="日用品">日用品</option>
-                        <option value="衣服">衣服</option><option value="旅游">旅游</option>
-                        <option value="医疗">医疗</option><option value="娱乐">娱乐</option>
-                        <option value="其他">其他</option>
-                    </select>
-                    <button class="btn-update" onclick="updateBudget()">更新预算</button>
-                </div>
-                <input type="number" id="setAmt" class="main-input" placeholder="设置月度金额目标">
+        <!-- 默认隐藏的设置区域 -->
+        <div id="budgetSettingArea" class="input-group hidden" style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed #e5e5ea;">
+            <div class="budget-set-row">
+                <select id="setCat">
+                    <option value="total">总预算</option>
+                    <option value="三餐">三餐</option><option value="住房">住房</option>
+                    <option value="交通">交通</option><option value="日用品">日用品</option>
+                    <option value="衣服">衣服</option><option value="旅游">旅游</option>
+                    <option value="医疗">医疗</option><option value="娱乐">娱乐</option>
+                    <option value="其他">其他</option>
+                </select>
+                <button class="btn-update" onclick="updateBudget()">更新</button>
             </div>
-            <div id="budgetPanel" class="budget-grid"></div>
+            <input type="number" id="setAmt" class="main-input" placeholder="输入月度金额目标">
         </div>
+        <!-- 始终显示的预算卡片 -->
+        <div id="budgetPanel" class="budget-grid"></div>
     </div>
 
     <div class="card">
@@ -107,16 +115,29 @@
 
     render();
 
-    // 切换折叠状态
-    function toggleBudget() {
-        const content = document.getElementById('budgetContent');
-        const btn = document.getElementById('toggleBudgetBtn');
-        if (content.classList.contains('hidden')) {
-            content.classList.remove('hidden');
-            btn.innerText = '[ 收起 ]';
+    // 切换备注框显示
+    function toggleNote() {
+        const noteInput = document.getElementById('recordNote');
+        const noteIcon = document.getElementById('noteIcon');
+        if (noteInput.classList.contains('hidden')) {
+            noteInput.classList.remove('hidden');
+            noteIcon.classList.add('active');
         } else {
-            content.classList.add('hidden');
-            btn.innerText = '[ 展开 ]';
+            noteInput.classList.add('hidden');
+            noteIcon.classList.remove('active');
+        }
+    }
+
+    // 仅折叠设置区域
+    function toggleBudgetSetting() {
+        const area = document.getElementById('budgetSettingArea');
+        const btn = document.getElementById('toggleSettingBtn');
+        if (area.classList.contains('hidden')) {
+            area.classList.remove('hidden');
+            btn.innerText = '[ 完成 ]';
+        } else {
+            area.classList.add('hidden');
+            btn.innerText = '[ 调整额度 ]';
         }
     }
 
@@ -136,6 +157,9 @@
         localStorage.setItem('my_month_records', JSON.stringify(records));
         document.getElementById('recordAmount').value = '';
         document.getElementById('recordNote').value = '';
+        // 自动收起备注框
+        document.getElementById('recordNote').classList.add('hidden');
+        document.getElementById('noteIcon').classList.remove('active');
         viewDate = new Date();
         render();
     }
