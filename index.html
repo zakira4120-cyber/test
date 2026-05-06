@@ -2,32 +2,33 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>Akira的预算专家-月度版</title>
+    <!-- 关键修复：加入下面这行 meta 标签，让页面宽度等于设备宽度 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Akira的预算专家</title>
     <style>
         :root { --primary: #007AFF; --danger: #ff3b30; --success: #34c759; --gray: #8e8e93; }
-        body { font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; background-color: #f2f2f7; display: flex; flex-direction: column; align-items: center; padding: 20px; color: #1c1c1e; }
-        .container { width: 100%; max-width: 600px; }
-        .card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        body { font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; background-color: #f2f2f7; display: flex; flex-direction: column; align-items: center; padding: 15px; color: #1c1c1e; margin: 0; }
+        .container { width: 100%; max-width: 500px; } /* 限制最大宽度，在手机上会自动撑满 */
+        .card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         h3 { margin-top: 0; font-size: 18px; border-left: 4px solid var(--primary); padding-left: 10px; margin-bottom: 15px; }
 
-        /* 月份切换器样式 */
-        .month-selector { display: flex; align-items: center; justify-content: space-between; background: #e5e5ea; padding: 10px 15px; border-radius: 12px; margin-bottom: 20px; }
-        .month-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--primary); }
+        .month-selector { display: flex; align-items: center; justify-content: space-between; background: white; padding: 12px 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .month-btn { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--primary); padding: 5px 15px; }
         #currentMonthDisplay { font-weight: bold; font-size: 16px; }
 
-        .budget-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; margin-top: 15px; }
+        .budget-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 15px; }
         .budget-card { background: #fbfbfd; border: 1px solid #e5e5ea; padding: 12px; border-radius: 12px; }
         .budget-card.over { border-color: var(--danger); background: #fff2f2; }
         .cat-name { font-size: 14px; font-weight: bold; margin-bottom: 5px; display: block; }
         .cat-num { font-size: 11px; color: var(--gray); }
         
         .input-row { display: flex; gap: 8px; margin-bottom: 10px; }
-        select, .main-input { flex: 1; padding: 12px; border: 1px solid #d2d2d7; border-radius: 10px; font-size: 14px; outline: none; }
-        .btn-main { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        select, .main-input { flex: 1; padding: 12px; border: 1px solid #d2d2d7; border-radius: 10px; font-size: 16px; outline: none; background: white; -webkit-appearance: none; }
+        .btn-main { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 16px; }
         .btn-update { padding: 0 15px; border-radius: 10px; border: 1px solid var(--primary); background: none; color: var(--primary); cursor: pointer; font-size: 14px; }
 
         .mini-progress { height: 4px; background: #e5e5ea; border-radius: 2px; margin-top: 8px; overflow: hidden; }
-        .mini-fill { height: 100%; background: var(--success); transition: width 0.3s; }
+        .mini-fill { height: 100%; background: var(--success); }
         .mini-fill.warn { background: var(--danger); }
 
         .record-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f2f2f7; }
@@ -38,14 +39,12 @@
 <body>
 
 <div class="container">
-    <!-- 月份切换 -->
     <div class="month-selector">
         <button class="month-btn" onclick="changeMonth(-1)">◀</button>
-        <span id="currentMonthDisplay">2026年05月</span>
+        <span id="currentMonthDisplay"></span>
         <button class="month-btn" onclick="changeMonth(1)">▶</button>
     </div>
 
-    <!-- 1. 新增支出 -->
     <div class="card">
         <h3>➀ 支出</h3>
         <div class="input-row">
@@ -62,7 +61,6 @@
         <button class="btn-main" onclick="addRecord()">保存</button>
     </div>
 
-    <!-- 2. 预算设置区 -->
     <div class="card">
         <h3>➁ 预算</h3>
         <div class="input-row">
@@ -80,7 +78,6 @@
         <div id="budgetPanel" class="budget-grid"></div>
     </div>
 
-    <!-- 3. 消费明细 -->
     <div class="card">
         <h3>➂ 消费明细</h3>
         <div id="recordList"></div>
@@ -91,13 +88,10 @@
     const categories = ["三餐", "住房", "交通", "日用品", "衣服", "旅游", "医疗", "娱乐", "其他"];
     let records = JSON.parse(localStorage.getItem('my_month_records')) || [];
     let budgets = JSON.parse(localStorage.getItem('my_month_budgets')) || { total: 0 };
-    
-    // 初始化显示当前日期
     let viewDate = new Date(); 
 
     render();
 
-    // 切换月份逻辑
     function changeMonth(delta) {
         viewDate.setMonth(viewDate.getMonth() + delta);
         render();
@@ -107,28 +101,13 @@
         const cat = document.getElementById('recordCategory').value;
         const amt = parseFloat(document.getElementById('recordAmount').value);
         const note = document.getElementById('recordNote').value;
-
         if (isNaN(amt)) return;
-
         const now = new Date();
-        // 记录时使用记录发生的真实时间
-        const timeStr = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2,'0')}-${now.getDate().toString().padStart(2,'0')} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
-        
-        // 存入包含月份标识的数据
-        records.unshift({ 
-            id: Date.now(), 
-            cat, 
-            amt, 
-            note, 
-            time: timeStr,
-            monthTag: `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2,'0')}` 
-        });
-        
+        const timeStr = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2,'0')}-${now.getDate().toString().padStart(2,'0')} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+        records.unshift({ id: Date.now(), cat, amt, note, time: timeStr, monthTag: `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2,'0')}` });
         localStorage.setItem('my_month_records', JSON.stringify(records));
         document.getElementById('recordAmount').value = '';
         document.getElementById('recordNote').value = '';
-        
-        // 自动切回到当前月份查看新记录
         viewDate = new Date();
         render();
     }
@@ -137,7 +116,6 @@
         const cat = document.getElementById('setCat').value;
         const amt = parseFloat(document.getElementById('setAmt').value);
         if (isNaN(amt)) return;
-        
         budgets[cat] = amt;
         localStorage.setItem('my_month_budgets', JSON.stringify(budgets));
         document.getElementById('setAmt').value = '';
@@ -154,46 +132,21 @@
         const year = viewDate.getFullYear();
         const month = (viewDate.getMonth() + 1).toString().padStart(2, '0');
         const currentTag = `${year}-${month}`;
-        
         document.getElementById('currentMonthDisplay').innerText = `${year}年${month}月`;
-
-        // 只统计当前选中月份的支出
         const stats = { total: 0 };
         categories.forEach(c => stats[c] = 0);
-        
-        // 过滤出当前月份的记录
         const currentMonthRecords = records.filter(r => r.monthTag === currentTag);
-        
-        currentMonthRecords.forEach(r => {
-            stats[r.cat] += r.amt;
-            stats.total += r.amt;
-        });
-
+        currentMonthRecords.forEach(r => { stats[r.cat] += r.amt; stats.total += r.amt; });
         const panel = document.getElementById('budgetPanel');
         panel.innerHTML = '';
         panel.appendChild(createCard("总预算", stats.total, budgets.total || 0));
-        categories.forEach(c => {
-            if (budgets[c] > 0) {
-                panel.appendChild(createCard(c, stats[c], budgets[c]));
-            }
-        });
-
+        categories.forEach(c => { if (budgets[c] > 0) panel.appendChild(createCard(c, stats[c], budgets[c])); });
         const list = document.getElementById('recordList');
         list.innerHTML = '';
         currentMonthRecords.forEach(r => {
             const div = document.createElement('div');
             div.className = 'record-item';
-            const displayName = r.note ? `[${r.cat}] ${r.note}` : `[${r.cat}]`;
-            div.innerHTML = `
-                <div style="display:flex; flex-direction:column;">
-                    <span style="font-size:14px;">${displayName}</span>
-                    <span class="record-time">${r.time}</span>
-                </div>
-                <div style="font-weight:600;">
-                    -￥${r.amt.toFixed(2)}
-                    <span class="del-text" onclick="deleteRecord(${r.id})">删除</span>
-                </div>
-            `;
+            div.innerHTML = `<div><span style="font-size:14px;">[${r.cat}] ${r.note || ''}</span><br><span class="record-time">${r.time}</span></div><div style="font-weight:600;">-￥${r.amt.toFixed(2)}<span class="del-text" onclick="deleteRecord(${r.id})">删除</span></div>`;
             list.appendChild(div);
         });
     }
@@ -203,16 +156,9 @@
         const percent = budget > 0 ? Math.min((spent / budget) * 100, 100) : 0;
         const isOver = budget > 0 && spent > budget;
         div.className = `budget-card ${isOver ? 'over' : ''}`;
-        div.innerHTML = `
-            <span class="cat-name">${name}</span>
-            <div class="cat-num">${spent.toFixed(0)} / ${budget}</div>
-            <div class="mini-progress">
-                <div class="mini-fill ${isOver ? 'warn' : ''}" style="width: ${percent}%"></div>
-            </div>
-        `;
+        div.innerHTML = `<span class="cat-name">${name}</span><div class="cat-num">${spent.toFixed(0)} / ${budget}</div><div class="mini-progress"><div class="mini-fill ${isOver ? 'warn' : ''}" style="width: ${percent}%"></div></div>`;
         return div;
     }
 </script>
-
 </body>
 </html>
