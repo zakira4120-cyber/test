@@ -3,47 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Akira的个人记账</title>
+    <title>常安的私人账本-报表增强版</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --primary: #007AFF; --danger: #ff3b30; --success: #34c759; --gray: #8e8e93; }
-        body { font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; background-color: #f2f2f7; display: flex; flex-direction: column; align-items: center; padding: 15px; color: #1c1c1e; margin: 0; }
-        .container { width: 100%; max-width: 500px; box-sizing: border-box; }
-        .card { background: white; border-radius: 16px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        :root { --primary: #007AFF; --income: #34c759; --danger: #ff3b30; --gray: #8e8e93; --bg: #f2f2f7; }
+        body { font-family: 'PingFang SC', sans-serif; background-color: var(--bg); padding: 15px; color: #1c1c1e; margin: 0; padding-bottom: 60px; }
+        .container { width: 100%; max-width: 500px; margin: 0 auto; }
+        .card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        h3 { margin: 0; font-size: 17px; border-left: 4px solid var(--primary); padding-left: 10px; }
-        .toggle-btn { font-size: 13px; color: var(--primary); cursor: pointer; padding: 5px; }
-
-        .month-selector { display: flex; align-items: center; justify-content: space-between; background: white; padding: 10px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .month-btn { background: none; border: none; font-size: 18px; color: var(--primary); padding: 5px 15px; }
+        /* 顶部月份切换 */
+        .month-selector { display: flex; align-items: center; justify-content: space-between; background: white; padding: 10px; border-radius: 12px; margin-bottom: 12px; }
+        .month-btn { background: none; border: none; font-size: 18px; color: var(--primary); padding: 5px 15px; cursor: pointer; }
         
-        .input-group { display: flex; flex-direction: column; gap: 10px; }
-        .amount-row { display: flex; gap: 8px; align-items: center; }
-        select, .main-input { width: 100%; padding: 12px; border: 1px solid #d2d2d7; border-radius: 10px; font-size: 16px; outline: none; background: white; box-sizing: border-box; }
+        .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .summary-box { background: #fbfbfd; border-radius: 12px; padding: 12px; border: 1px solid #e5e5ea; }
+        .label { font-size: 11px; color: var(--gray); display: block; margin-bottom: 4px; }
+        .value { font-size: 18px; font-weight: bold; }
+
+        .row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+        select, .main-input { width: 100%; padding: 12px; border: 1px solid #d2d2d7; border-radius: 10px; font-size: 16px; outline: none; }
+        .icon-btn { width: 44px; height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border: 1px solid #d2d2d7; border-radius: 10px; background: white; cursor: pointer; }
         
-        /* 备注图标按钮 */
-        .note-toggle { width: 44px; height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border: 1px solid #d2d2d7; border-radius: 10px; font-size: 18px; color: var(--gray); cursor: pointer; }
-        .note-toggle.active { border-color: var(--primary); color: var(--primary); background: #f0f7ff; }
-
-        .budget-set-row { display: flex; gap: 8px; align-items: center; }
-        .budget-set-row select { flex: 1; }
-        .btn-update { padding: 12px 15px; border-radius: 10px; background: var(--primary); color: white; border: none; font-size: 14px; white-space: nowrap; }
-        .btn-main { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; font-size: 16px; margin-top: 12px; }
-
-        .budget-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 12px; }
+        .btn-main { width: 100%; padding: 14px; color: white; border: none; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; margin-bottom: 10px; }
+        .control-row { display: flex; gap: 10px; }
+        .control-item { flex: 1; background: #e5e5ea; border-radius: 10px; padding: 10px; text-align: center; font-size: 12px; cursor: pointer; }
+        
         .hidden { display: none !important; }
+        .bar-bg { height: 6px; background: #f2f2f7; border-radius: 3px; overflow: hidden; margin: 8px 0; }
+        .bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
+        
+        /* 日报表样式 */
+        .day-header { background: #f8f8f8; padding: 8px 12px; font-size: 13px; display: flex; justify-content: space-between; border-radius: 8px; margin-top: 15px; }
+        .day-summary { color: #8e8e93; font-size: 11px; }
+        .record-item { display: flex; justify-content: space-between; padding: 12px 5px; border-bottom: 1px solid #f2f2f7; align-items: center; }
+        .amt-tag { font-weight: bold; cursor: pointer; }
+        .del-btn { color: var(--danger); font-size: 11px; margin-left: 8px; }
 
-        .budget-card { background: #fbfbfd; border: 1px solid #e5e5ea; padding: 12px; border-radius: 12px; }
-        .budget-card.over { border-color: var(--danger); background: #fff2f2; }
-        .cat-name { font-size: 13px; font-weight: bold; margin-bottom: 4px; display: block; }
-        .cat-num { font-size: 11px; color: var(--gray); }
-        .mini-progress { height: 4px; background: #e5e5ea; border-radius: 2px; margin-top: 8px; overflow: hidden; }
-        .mini-fill { height: 100%; background: var(--success); }
-        .mini-fill.warn { background: var(--danger); }
-
-        .record-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f2f2f7; }
-        .record-time { font-size: 11px; color: var(--gray); }
-        .del-text { color: var(--danger); font-size: 12px; margin-left: 10px; }
+        #chartWrapper { width: 160px; height: 160px; margin: 0 auto 15px; }
     </style>
 </head>
 <body>
@@ -51,166 +47,180 @@
 <div class="container">
     <div class="month-selector">
         <button class="month-btn" onclick="changeMonth(-1)">◀</button>
-        <span id="currentMonthDisplay"></span>
+        <span id="monthDisplay" style="font-weight: bold;"></span>
         <button class="month-btn" onclick="changeMonth(1)">▶</button>
     </div>
 
     <div class="card">
-        <div class="card-header"><h3>➀ 支出</h3></div>
-        <div class="input-group">
-            <select id="recordCategory">
+        <div class="summary-grid">
+            <div class="summary-box"><span class="label">本月收入总计</span><div class="value" id="totalInc" style="color:var(--income)">￥0</div></div>
+            <div class="summary-box"><span class="label">本月支出总计</span><div class="value" id="totalExp" style="color:#1c1c1e">￥0</div></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="row">
+            <select id="expCat">
                 <option value="三餐">三餐</option><option value="住房">住房</option>
                 <option value="交通">交通</option><option value="日用品">日用品</option>
-                <option value="衣服">衣服</option><option value="旅游">旅游</option>
-                <option value="医疗">医疗</option><option value="娱乐">娱乐</option>
-                <option value="其他">其他</option>
+                <option value="衣服">衣服</option><option value="水电煤">水电煤</option>
+                <option value="其它">其它</option>
             </select>
-            <div class="amount-row">
-                <input type="number" id="recordAmount" class="main-input" placeholder="输入金额">
-                <!-- 备注图标 -->
-                <div id="noteIcon" class="note-toggle" onclick="toggleNote()">✎</div>
-            </div>
-            <!-- 默认隐藏的备注框 -->
-            <input type="text" id="recordNote" class="main-input hidden" placeholder="写点备注...">
+            <input type="number" id="expAmt" class="main-input" placeholder="支出金额">
+            <div class="icon-btn" onclick="toggleNote()">✎</div>
         </div>
-        <button class="btn-main" onclick="addRecord()">保存记录</button>
+        <input type="text" id="expNote" class="main-input hidden" style="margin-bottom:8px" placeholder="备注（选填）">
+        <button class="btn-main" style="background:var(--primary)" onclick="addRecord('out')">保存支出记录</button>
+        
+        <div class="control-row">
+            <div class="control-item" onclick="toggleModule('Inc')">+ 收入</div>
+            <div class="control-item" onclick="toggleModule('Set')">⚙ 预算</div>
+        </div>
+    </div>
+
+    <div id="moduleInc" class="card hidden">
+        <div class="row"><select id="incAcc"><option value="工资">工资收入</option><option value="其它">其它收入</option></select><input type="number" id="incAmt" class="main-input" placeholder="金额"></div>
+        <button class="btn-main" style="background:var(--income)" onclick="addRecord('in')">确认入账</button>
+    </div>
+
+    <div id="moduleSet" class="card hidden">
+        <div class="row">
+            <select id="setCat">
+                <option value="total">月度总预算</option>
+                <option value="三餐">三餐</option><option value="住房">住房</option>
+                <option value="交通">交通</option><option value="水电煤">水电煤</option>
+            </select>
+            <input type="number" id="setAmt" class="main-input" placeholder="金额">
+        </div>
+        <button class="btn-main" style="background:var(--gray)" onclick="updateBudget()">保存预算</button>
     </div>
 
     <div class="card">
-        <div class="card-header">
-            <h3>➁ 预算</h3>
-            <!-- 修改：仅折叠设置区域 -->
-            <div class="toggle-btn" id="toggleSettingBtn" onclick="toggleBudgetSetting()">[ 调整额度 ]</div>
-        </div>
-        <!-- 默认隐藏的设置区域 -->
-        <div id="budgetSettingArea" class="input-group hidden" style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed #e5e5ea;">
-            <div class="budget-set-row">
-                <select id="setCat">
-                    <option value="total">总预算</option>
-                    <option value="三餐">三餐</option><option value="住房">住房</option>
-                    <option value="交通">交通</option><option value="日用品">日用品</option>
-                    <option value="衣服">衣服</option><option value="旅游">旅游</option>
-                    <option value="医疗">医疗</option><option value="娱乐">娱乐</option>
-                    <option value="其他">其他</option>
-                </select>
-                <button class="btn-update" onclick="updateBudget()">更新</button>
-            </div>
-            <input type="number" id="setAmt" class="main-input" placeholder="输入月度金额目标">
-        </div>
-        <!-- 始终显示的预算卡片 -->
-        <div id="budgetPanel" class="budget-grid"></div>
+        <h4 style="margin:0 0 15px 0; font-size:14px; color:var(--gray); text-align: center;">分类支出进度</h4>
+        <div id="chartWrapper"><canvas id="pieChart"></canvas></div>
+        <div id="catProgressList"></div>
     </div>
 
-    <div class="card">
-        <div class="card-header"><h3>➂ 消费明细</h3></div>
-        <div id="recordList"></div>
+    <div class="card" style="padding: 10px 16px;">
+        <h4 style="margin-bottom: 10px;">历史流水明细</h4>
+        <div id="dailyReportList"></div>
     </div>
 </div>
 
 <script>
-    const categories = ["三餐", "住房", "交通", "日用品", "衣服", "旅游", "医疗", "娱乐", "其他"];
-    let records = JSON.parse(localStorage.getItem('my_month_records')) || [];
-    let budgets = JSON.parse(localStorage.getItem('my_month_budgets')) || { total: 0 };
-    let viewDate = new Date(); 
-
-    render();
-
-    // 切换备注框显示
-    function toggleNote() {
-        const noteInput = document.getElementById('recordNote');
-        const noteIcon = document.getElementById('noteIcon');
-        if (noteInput.classList.contains('hidden')) {
-            noteInput.classList.remove('hidden');
-            noteIcon.classList.add('active');
-        } else {
-            noteInput.classList.add('hidden');
-            noteIcon.classList.remove('active');
-        }
-    }
-
-    // 仅折叠设置区域
-    function toggleBudgetSetting() {
-        const area = document.getElementById('budgetSettingArea');
-        const btn = document.getElementById('toggleSettingBtn');
-        if (area.classList.contains('hidden')) {
-            area.classList.remove('hidden');
-            btn.innerText = '[ 完成 ]';
-        } else {
-            area.classList.add('hidden');
-            btn.innerText = '[ 调整额度 ]';
-        }
-    }
-
-    function changeMonth(delta) {
-        viewDate.setMonth(viewDate.getMonth() + delta);
-        render();
-    }
-
-    function addRecord() {
-        const cat = document.getElementById('recordCategory').value;
-        const amt = parseFloat(document.getElementById('recordAmount').value);
-        const note = document.getElementById('recordNote').value;
-        if (isNaN(amt)) return;
-        const now = new Date();
-        const timeStr = `${now.getMonth()+1}月${now.getDate()}日 ${now.getHours()}:${now.getMinutes().toString().padStart(2,'0')}`;
-        records.unshift({ id: Date.now(), cat, amt, note, time: timeStr, monthTag: `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2,'0')}` });
-        localStorage.setItem('my_month_records', JSON.stringify(records));
-        document.getElementById('recordAmount').value = '';
-        document.getElementById('recordNote').value = '';
-        // 自动收起备注框
-        document.getElementById('recordNote').classList.add('hidden');
-        document.getElementById('noteIcon').classList.remove('active');
-        viewDate = new Date();
-        render();
-    }
-
-    function updateBudget() {
-        const cat = document.getElementById('setCat').value;
-        const amt = parseFloat(document.getElementById('setAmt').value);
-        if (isNaN(amt)) return;
-        budgets[cat] = amt;
-        localStorage.setItem('my_month_budgets', JSON.stringify(budgets));
-        document.getElementById('setAmt').value = '';
-        render();
-    }
-
-    function deleteRecord(id) {
-        records = records.filter(r => r.id !== id);
-        localStorage.setItem('my_month_records', JSON.stringify(records));
-        render();
-    }
+    let records = JSON.parse(localStorage.getItem('ca_v15_data')) || [];
+    let budgets = JSON.parse(localStorage.getItem('ca_v15_bud')) || { total: 0 };
+    let viewDate = new Date();
+    let myChart = null;
+    const catColors = { "三餐":"#ff9500", "住房":"#ff3b30", "交通":"#007aff", "日用品":"#5856d6", "衣服":"#af52de", "水电煤":"#34c759", "其它":"#8e8e93" };
 
     function render() {
         const year = viewDate.getFullYear();
-        const month = (viewDate.getMonth() + 1).toString().padStart(2, '0');
-        const currentTag = `${year}-${month}`;
-        document.getElementById('currentMonthDisplay').innerText = `${year}年${month}月`;
-        const stats = { total: 0 };
-        categories.forEach(c => stats[c] = 0);
-        const currentMonthRecords = records.filter(r => r.monthTag === currentTag);
-        currentMonthRecords.forEach(r => { stats[r.cat] += r.amt; stats.total += r.amt; });
-        const panel = document.getElementById('budgetPanel');
-        panel.innerHTML = '';
-        panel.appendChild(createCard("总预算", stats.total, budgets.total || 0));
-        categories.forEach(c => { if (budgets[c] > 0) panel.appendChild(createCard(c, stats[c], budgets[c])); });
-        const list = document.getElementById('recordList');
-        list.innerHTML = '';
-        currentMonthRecords.forEach(r => {
-            const div = document.createElement('div');
-            div.className = 'record-item';
-            div.innerHTML = `<div><span style="font-size:14px;">[${r.cat}] ${r.note || ''}</span><br><span class="record-time">${r.time}</span></div><div style="font-weight:600;">-￥${r.amt.toFixed(2)}<span class="del-text" onclick="deleteRecord(${r.id})">删除</span></div>`;
-            list.appendChild(div);
+        const month = viewDate.getMonth() + 1;
+        const tag = `${year}-${month.toString().padStart(2, '0')}`;
+        document.getElementById('monthDisplay').innerText = `${year}年${month}月`;
+        
+        const curRecords = records.filter(r => r.tag === tag);
+        let iTotal = 0, eTotal = 0, catStats = {};
+        Object.keys(catColors).forEach(c => catStats[c] = 0);
+        curRecords.forEach(r => { if(r.type === 'in') iTotal += r.amt; else { eTotal += r.amt; catStats[r.cat] += r.amt; } });
+
+        document.getElementById('totalInc').innerText = `￥${iTotal.toFixed(2)}`;
+        document.getElementById('totalExp').innerText = `￥${eTotal.toFixed(2)}`;
+
+        updateChart(catStats);
+        renderCatList(catStats, eTotal);
+        renderDailyReport(curRecords);
+    }
+
+    function updateChart(stats) {
+        const ctx = document.getElementById('pieChart').getContext('2d');
+        const labels = Object.keys(stats).filter(k => stats[k] > 0);
+        const data = labels.map(k => stats[k]);
+        if(myChart) myChart.destroy();
+        if(!data.length) return;
+        myChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: { datasets: [{ data, backgroundColor: labels.map(k => catColors[k]), borderWidth: 0 }] },
+            options: { cutout: '75%', plugins: { legend: { display: false } } }
         });
     }
 
-    function createCard(name, spent, budget) {
-        const div = document.createElement('div');
-        const percent = budget > 0 ? Math.min((spent / budget) * 100, 100) : 0;
-        const isOver = budget > 0 && spent > budget;
-        div.className = `budget-card ${isOver ? 'over' : ''}`;
-        div.innerHTML = `<span class="cat-name">${name}</span><div class="cat-num">${spent.toFixed(0)} / ${budget}</div><div class="mini-progress"><div class="mini-fill ${isOver ? 'warn' : ''}" style="width: ${percent}%"></div></div>`;
-        return div;
+    // 渲染进度条并显示“剩余金额”
+    function renderCatList(stats, total) {
+        const list = document.getElementById('catProgressList'); list.innerHTML = '';
+        Object.keys(stats).filter(c => stats[c] > 0 || budgets[c] > 0).forEach(cat => {
+            const spent = stats[cat], catBud = budgets[cat] || 0;
+            const remain = catBud - spent;
+            const isOver = remain < 0;
+            list.innerHTML += `
+                <div style="margin-bottom:15px">
+                    <div style="display:flex; justify-content:space-between; font-size:13px">
+                        <span><b>${cat}</b> <small style="color:#999">￥${spent.toFixed(0)}</small></span>
+                        <span style="color:${isOver?'var(--danger)':'#666'}">${catBud>0 ? (isOver?'超￥'+Math.abs(remain).toFixed(0):'剩￥'+remain.toFixed(0)) : '未设预算'}</span>
+                    </div>
+                    <div class="bar-bg"><div class="bar-fill" style="width:${catBud>0?Math.min((spent/catBud)*100,100):0}%; background:${catColors[cat]}"></div></div>
+                </div>`;
+        });
     }
+
+    // 渲染日报表流水
+    function renderDailyReport(curRecords) {
+        const list = document.getElementById('dailyReportList'); list.innerHTML = '';
+        const groups = {};
+        curRecords.forEach(r => { if(!groups[r.date]) groups[r.date] = { items: [], exp: 0, inc: 0 }; groups[r.date].items.push(r); if(r.type==='out') groups[r.date].exp += r.amt; else groups[r.date].inc += r.amt; });
+
+        Object.keys(groups).sort((a,b)=>new Date(b)-new Date(a)).forEach(date => {
+            const g = groups[date];
+            let html = `<div class="day-header"><span>${date}</span><span class="day-summary">支:${g.exp.toFixed(1)} 结:${(g.inc-g.exp).toFixed(1)}</span></div>`;
+            g.items.forEach(r => {
+                html += `
+                <div class="record-item">
+                    <div style="flex:1"><b>${r.cat}</b> <small style="color:#999">${r.note||''}</small></div>
+                    <div style="text-align:right">
+                        <span class="amt-tag" style="color:${r.type==='in'?'var(--income)':'#333'}" onclick="editRecord(${r.id})">${r.type==='in'?'+':'-'}￥${r.amt}</span>
+                        <span class="del-btn" onclick="deleteRecord(${r.id})">×</span>
+                    </div>
+                </div>`;
+            });
+            list.innerHTML += html;
+        });
+    }
+
+    function addRecord(type) {
+        const amtInput = type==='in'?'incAmt':'expAmt';
+        const amt = parseFloat(document.getElementById(amtInput).value);
+        if(isNaN(amt)) return;
+        const now = new Date();
+        records.unshift({ id: Date.now(), type, cat: document.getElementById(type==='in'?'incAcc':'expCat').value, amt, note: document.getElementById('expNote').value, date: `${now.getMonth()+1}/${now.getDate()}`, tag: `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2,'0')}` });
+        localStorage.setItem('ca_v15_data', JSON.stringify(records));
+        document.getElementById(amtInput).value = ''; document.getElementById('expNote').value = '';
+        document.getElementById('expNote').classList.add('hidden');
+        if(type==='in') toggleModule('Inc');
+        render();
+    }
+
+    function editRecord(id) {
+        const r = records.find(item => item.id === id);
+        if(!r) return;
+        document.getElementById('expCat').value = r.cat;
+        document.getElementById('expAmt').value = r.amt;
+        document.getElementById('expNote').value = r.note;
+        document.getElementById('expNote').classList.remove('hidden');
+        records = records.filter(item => item.id !== id);
+        render(); window.scrollTo(0,0);
+    }
+
+    function deleteRecord(id) { if(confirm('确定删除？')) { records = records.filter(r => r.id !== id); localStorage.setItem('ca_v15_data', JSON.stringify(records)); render(); } }
+    function updateBudget() {
+        const cat = document.getElementById('setCat').value, amt = parseFloat(document.getElementById('setAmt').value);
+        if(!isNaN(amt)) { budgets[cat] = amt; localStorage.setItem('ca_v15_bud', JSON.stringify(budgets)); }
+        toggleModule('Set'); render();
+    }
+    function toggleModule(id) { document.getElementById('module' + id).classList.toggle('hidden'); }
+    function toggleNote() { document.getElementById('expNote').classList.toggle('hidden'); }
+    function changeMonth(d) { viewDate.setMonth(viewDate.getMonth() + d); render(); }
+    render();
 </script>
 </body>
 </html>
