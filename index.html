@@ -63,7 +63,7 @@
             <select id="expCat">
                 <option value="三餐">三餐</option><option value="住房">住房</option>
                 <option value="交通">交通</option><option value="日用品">日用品</option>
-                <option value="衣服">衣服</option><option value="水电煤">水电煤</option>
+                <option value="服饰">服饰</option><option value="水电煤">水电煤</option>
                 <option value="其它">其它</option>
             </select>
             <input type="number" id="expAmt" class="main-input" placeholder="支出金额">
@@ -87,12 +87,16 @@
         <div class="row">
             <select id="setCat">
                 <option value="total">月度总预算</option>
-                <option value="三餐">三餐</option><option value="住房">住房</option>
-                <option value="交通">交通</option><option value="水电煤">水电煤</option>
+                <option value="三餐">三餐</option>
+                <option value="住房">住房</option>
+                <option value="交通">交通</option>
+                <option value="日用品">日用品</option>
+                <option value="服饰">服饰</option>
+                <option value="水电煤">水电煤</option>
             </select>
             <input type="number" id="setAmt" class="main-input" placeholder="金额">
         </div>
-        <button class="btn-main" style="background:var(--gray)" onclick="updateBudget()">保存预算</button>
+        <button class="btn-main" style="background:var(--gray)" onclick="updateBudget()">保存预算值</button>
     </div>
 
     <div class="card">
@@ -112,7 +116,8 @@
     let budgets = JSON.parse(localStorage.getItem('ca_v15_bud')) || { total: 0 };
     let viewDate = new Date();
     let myChart = null;
-    const catColors = { "三餐":"#ff9500", "住房":"#ff3b30", "交通":"#007aff", "日用品":"#5856d6", "衣服":"#af52de", "水电煤":"#34c759", "其它":"#8e8e93" };
+    // 统一分类名称为“服饰”
+    const catColors = { "三餐":"#ff9500", "住房":"#ff3b30", "交通":"#007aff", "日用品":"#5856d6", "服饰":"#af52de", "水电煤":"#34c759", "其它":"#8e8e93" };
 
     function render() {
         const year = viewDate.getFullYear();
@@ -146,7 +151,6 @@
         });
     }
 
-    // 渲染进度条并显示“剩余金额”
     function renderCatList(stats, total) {
         const list = document.getElementById('catProgressList'); list.innerHTML = '';
         Object.keys(stats).filter(c => stats[c] > 0 || budgets[c] > 0).forEach(cat => {
@@ -164,7 +168,6 @@
         });
     }
 
-    // 渲染日报表流水
     function renderDailyReport(curRecords) {
         const list = document.getElementById('dailyReportList'); list.innerHTML = '';
         const groups = {};
@@ -212,11 +215,17 @@
     }
 
     function deleteRecord(id) { if(confirm('确定删除？')) { records = records.filter(r => r.id !== id); localStorage.setItem('ca_v15_data', JSON.stringify(records)); render(); } }
+    
     function updateBudget() {
         const cat = document.getElementById('setCat').value, amt = parseFloat(document.getElementById('setAmt').value);
-        if(!isNaN(amt)) { budgets[cat] = amt; localStorage.setItem('ca_v15_bud', JSON.stringify(budgets)); }
-        toggleModule('Set'); render();
+        if(!isNaN(amt)) { 
+            budgets[cat] = amt; 
+            localStorage.setItem('ca_v15_bud', JSON.stringify(budgets)); 
+        }
+        toggleModule('Set'); 
+        render();
     }
+
     function toggleModule(id) { document.getElementById('module' + id).classList.toggle('hidden'); }
     function toggleNote() { document.getElementById('expNote').classList.toggle('hidden'); }
     function changeMonth(d) { viewDate.setMonth(viewDate.getMonth() + d); render(); }
